@@ -1,0 +1,22 @@
+# Node.js dependencies
+node_modules/
+mean-chat-backend/node_modules/
+mean-chat-frontend/node_modules/
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
+
+# Build output
+dist/
+
+# IDE-specific files
+.vscode/
+*.code-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
