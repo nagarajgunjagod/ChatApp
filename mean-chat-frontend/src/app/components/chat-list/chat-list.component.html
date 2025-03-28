@@ -1,0 +1,11 @@
+<div class="chat-list-container">
+  <h3>Your Chats</h3>
+  <div class="chat-list">
+    <ul>
+      <li *ngFor="let chat of chats" (click)="openChat(chat._id.contact._id)">
+        <strong>{{ chat._id.contact.username }}</strong>
+        <p>{{ chat.lastMessage.text }}</p>
+      </li>
+    </ul>
+  </div>
+</div>

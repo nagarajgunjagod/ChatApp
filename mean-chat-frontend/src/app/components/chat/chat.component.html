@@ -1,0 +1,30 @@
+<div class="chat-window-container">
+  <!-- Top bar with the logged-in user's username -->
+  <div class="top-bar">
+    <span>Logged in as: <strong>{{ username }}</strong></span>
+  </div>
+
+  <!-- Chat messages -->
+  <div class="messages">
+    <div
+      *ngFor="let message of messages"
+      [ngClass]="{
+        'sent-message': message.sender === authService.getUserId(),
+        'received-message': message.sender !== authService.getUserId()
+      }"
+    >
+      <p>{{ message.text }}</p>
+      <span>{{ message.timestamp | date: 'shortTime' }}</span>
+    </div>
+  </div>
+
+  <!-- Input field for sending messages -->
+  <div class="input-container">
+    <input
+      type="text"
+      [(ngModel)]="newMessage"
+      placeholder="Type a message..."
+    />
+    <button (click)="sendMessage()">Send</button>
+  </div>
+</div>

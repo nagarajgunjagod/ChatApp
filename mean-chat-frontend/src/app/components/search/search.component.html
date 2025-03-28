@@ -1,0 +1,15 @@
+<div class="search-container">
+  <input
+    type="text"
+    [(ngModel)]="searchQuery"
+    placeholder="Search for users..."
+  />
+  <button (click)="searchUsers()">Search</button>
+
+  <ul>
+    <li *ngFor="let user of searchResults">
+      {{ user.username }}
+      <button (click)="startChat(user._id)">Start Chat</button>
+    </li>
+  </ul>
+</div>

@@ -1,0 +1,63 @@
+/* Center the content */
+.welcome-container {
+    text-align: center;
+    margin-top: 15%;
+}
+
+/* Angular logo styling */
+.logo {
+    width: 120px;
+    height: auto;
+    animation: rotateLogo 5s linear infinite;
+}
+
+/* Logo rotation animation */
+@keyframes rotateLogo {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Button styling */
+.start-chat-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    color: white;
+    background: #dd1b16;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.start-chat-btn:hover {
+    background: #c41a15;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.search-bar {
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-bottom: 1px solid #ddd;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+}
+
+.chat-list {
+  width: 30%;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+}
+
+.chat-window {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+}
