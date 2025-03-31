@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -11,13 +12,14 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: '*',
+    origin: 'http://localhost:4200', // Allow requests from the frontend
     methods: ['GET', 'POST'],
   },
 });
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
 
 // Connect to MongoDB
 mongoose
@@ -32,19 +34,22 @@ app.use('/api/users', userRoutes);
 
 // Socket.io connection
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('A user connected:', socket.id);
 
+  // Join a chat room
   socket.on('join-chat', (chatId) => {
+    console.log(`User joined chat room: ${chatId}`);
     socket.join(chatId);
-    console.log(`User joined chat: ${chatId}`);
   });
 
-  socket.on('send-message', ({ chatId, message }) => {
-    io.to(chatId).emit('receive-message', message); // Broadcast to all users in the chat
+  // Handle sending messages
+  socket.on('send-message', (message) => {
+    console.log('Message received:', message);
+    io.to(message.chatId).emit('receive-message', message); // Broadcast to the chat room
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+    console.log('A user disconnected:', socket.id);
   });
 });
 

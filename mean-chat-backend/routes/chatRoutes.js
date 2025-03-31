@@ -10,10 +10,19 @@ const JWT_SECRET = 'your_jwt_secret_key'; // Replace with a secure key
 // Middleware to authenticate the user
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization'];
-  if (!token) return res.status(401).json({ error: 'Access denied' });
+  if (!token) {
+    console.error('Authorization token is missing.');
+    return res.status(401).json({ error: 'Access denied' });
+  }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
+  const tokenValue = token.split(' ')[1]; // Extract the token after "Bearer"
+  console.log('Token received:', tokenValue); // Debugging log
+
+  jwt.verify(tokenValue, JWT_SECRET, (err, user) => {
+    if (err) {
+      console.error('Invalid token:', err);
+      return res.status(403).json({ error: 'Invalid token' });
+    }
     req.user = user;
     next();
   });
@@ -21,39 +30,21 @@ const authenticateToken = (req, res, next) => {
 
 // Get all chats for the logged-in user
 router.get('/chats', authenticateToken, async (req, res) => {
+  console.log('Reached /chats endpoint'); // Debugging log
   try {
     const userId = req.user.id;
+    console.log('Fetching chats for user ID:', userId); // Debugging log
 
-    // Find all unique contacts the user has interacted with
-    const chats = await Message.aggregate([
-      {
-        $match: {
-          $or: [{ sender: userId }, { receiver: userId }],
-        },
-      },
-      {
-        $group: {
-          _id: {
-            contact: {
-              $cond: [
-                { $eq: ['$sender', userId] },
-                '$receiver',
-                '$sender',
-              ],
-            },
-          },
-          lastMessage: { $last: '$$ROOT' },
-        },
-      },
-    ]);
+    // Fetch chats where the user is a participant
+    const chats = await Chat.find({ participants: userId })
+      .populate('participants', 'username') // Populate participant usernames
+      .populate({
+        path: 'messages',
+        options: { sort: { timestamp: -1 }, limit: 1 }, // Fetch the latest message
+      });
 
-    // Populate the contact details
-    const populatedChats = await User.populate(chats, {
-      path: '_id.contact',
-      select: 'username',
-    });
-
-    res.json(populatedChats);
+    console.log('Fetched chats:', chats); // Debugging log
+    res.json(chats);
   } catch (err) {
     console.error('Error fetching chats:', err);
     res.status(500).json({ error: 'Failed to fetch chats' });
@@ -65,7 +56,6 @@ router.get('/chats/:chatId', authenticateToken, async (req, res) => {
   try {
     console.log('Fetching messages for chat:', req.params.chatId); // Debugging log
 
-    // Find the chat and populate the sender field in messages
     const chat = await Chat.findById(req.params.chatId).populate({
       path: 'messages',
       populate: { path: 'sender', select: 'username' }, // Populate sender's username
@@ -90,7 +80,10 @@ router.get('/messages/:contactId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const contactId = req.params.contactId;
 
-    // Find all messages between the logged-in user and the contact
+    if (!contactId) {
+      return res.status(400).json({ error: 'Contact ID is required' });
+    }
+
     const messages = await Message.find({
       $or: [
         { sender: userId, receiver: contactId },
@@ -110,24 +103,31 @@ router.post('/chats/:chatId/messages', authenticateToken, async (req, res) => {
   try {
     console.log('Adding message to chat:', req.params.chatId); // Debugging log
 
-    // Find the chat by ID
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Message text is required' });
+    }
+
     const chat = await Chat.findById(req.params.chatId);
     if (!chat) {
       console.error('Chat not found:', req.params.chatId); // Debugging log
       return res.status(404).json({ error: 'Chat not found' });
     }
 
-    // Create a new message
+    const receiver = chat.participants.find(participant => participant.toString() !== req.user.id);
+    if (!receiver) {
+      console.error('Receiver not found in chat participants'); // Debugging log
+      return res.status(400).json({ error: 'Receiver not found in chat participants' });
+    }
+
     const message = new Message({
-      text: req.body.text,
-      sender: req.user.id, // Sender is the logged-in user
+      text,
+      sender: req.user.id,
+      receiver,
       chatId: req.params.chatId,
     });
 
-    // Save the message
     await message.save();
-
-    // Add the message to the chat's messages array
     chat.messages.push(message._id);
     await chat.save();
 
@@ -144,6 +144,10 @@ router.post('/messages', authenticateToken, async (req, res) => {
   try {
     const { text, receiver } = req.body;
     const sender = req.user.id;
+
+    if (!text || !receiver) {
+      return res.status(400).json({ error: 'Message text and receiver are required' });
+    }
 
     // Create a new message
     const message = new Message({
@@ -169,13 +173,15 @@ router.post('/chats', authenticateToken, async (req, res) => {
   try {
     console.log('Creating chat with participant:', participantId); // Debugging log
 
-    // Check if the chat already exists
+    if (!participantId) {
+      return res.status(400).json({ error: 'Participant ID is required' });
+    }
+
     let chat = await Chat.findOne({
       participants: { $all: [req.user.id, participantId] },
     });
 
     if (!chat) {
-      // Create a new chat if it doesn't exist
       chat = new Chat({
         participants: [req.user.id, participantId],
         messages: [],

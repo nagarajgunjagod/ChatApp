@@ -8,10 +8,19 @@ const JWT_SECRET = 'your_jwt_secret_key'; // Replace with a secure key
 // Middleware to authenticate the user
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization'];
-  if (!token) return res.status(401).json({ error: 'Access denied' });
+  if (!token) {
+    console.error('Authorization token is missing.');
+    return res.status(401).json({ error: 'Access denied' });
+  }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
+  const tokenValue = token.split(' ')[1]; // Extract the token after "Bearer"
+  console.log('Token received:', tokenValue); // Debugging log
+
+  jwt.verify(tokenValue, JWT_SECRET, (err, user) => {
+    if (err) {
+      console.error('Invalid token:', err);
+      return res.status(403).json({ error: 'Invalid token' });
+    }
     req.user = user;
     next();
   });

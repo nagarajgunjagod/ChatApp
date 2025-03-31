@@ -11,6 +11,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] }, // Add this route for /chat
   { path: 'chat/:chatId', component: ChatComponent, canActivate: [AuthGuard] }, // Add this route for /chat/:chatId
+  { path: 'chat/:chatId/:contactId', component: ChatComponent },
 ];
 
 @NgModule({

@@ -6,7 +6,7 @@ import { ChatComponent } from './components/chat/chat.component';
 import { ChatListComponent } from './components/chat-list/chat-list.component';
 import { RegisterComponent } from './components/register/register.component';
 import { LoginComponent } from './components/login/login.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'; // Import ReactiveFormsModule
 import { HttpClientModule } from '@angular/common/http';
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
 import { SearchComponent } from './components/search/search.component';
@@ -26,7 +26,8 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule,
+    ReactiveFormsModule, // Add ReactiveFormsModule here
+    HttpClientModule, // Add HttpClientModule for API calls
     SocketIoModule.forRoot(config),
   ],
   providers: [],

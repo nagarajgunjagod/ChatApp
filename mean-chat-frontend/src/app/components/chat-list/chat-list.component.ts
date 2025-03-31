@@ -14,21 +14,34 @@ export class ChatListComponent implements OnInit {
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authorization token is missing.');
+      return;
+    }
+
+    console.log('Sending request to /api/chats with token:', token); // Debugging log
+
     this.http
       .get('http://localhost:3000/api/chats', {
-        headers: { Authorization: token || '' },
+        headers: { Authorization: `Bearer ${token}` },
       })
       .subscribe({
         next: (chats: any) => {
+          console.log('Fetched chats:', chats); // Debugging log
           this.chats = chats;
         },
         error: (error) => {
-          console.error('Error fetching chats:', error);
+          console.error('Error fetching chats:', error); // Debugging log
         },
       });
   }
 
-  openChat(contactId: string): void {
-    this.router.navigate(['/chat', contactId]);
+  openChat(chatId: string, contactId: string | undefined): void {
+    console.log('entered--------------')
+    if (!contactId) {
+      console.error('Contact ID is missing.');
+      return;
+    }
+    this.router.navigate(['/chat', chatId, contactId]);
   }
 }

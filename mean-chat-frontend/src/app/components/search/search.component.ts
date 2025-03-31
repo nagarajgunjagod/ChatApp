@@ -13,10 +13,16 @@ export class SearchComponent {
 
   constructor(private http: HttpClient, private router: Router) {}
 
+  // Search for users by username
   searchUsers(): void {
     console.log('Search button clicked'); // Debugging log
 
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authorization token is missing.'); // Debugging log
+      return;
+    }
+
     if (!this.searchQuery.trim()) {
       console.error('Search query is empty'); // Debugging log
       return;
@@ -24,7 +30,7 @@ export class SearchComponent {
 
     this.http
       .get(`http://localhost:3000/api/users/search?username=${this.searchQuery}`, {
-        headers: { Authorization: token || '' },
+        headers: { Authorization: `Bearer ${token}` }, // Ensure Bearer prefix
       })
       .subscribe(
         (results: any) => {
@@ -37,20 +43,26 @@ export class SearchComponent {
       );
   }
 
+  // Start a chat with a specific user
   startChat(participantId: string): void {
     console.log('Starting chat with user:', participantId); // Debugging log
 
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authorization token is missing.'); // Debugging log
+      return;
+    }
+
     this.http
       .post(
         'http://localhost:3000/api/chats',
         { participantId },
-        { headers: { Authorization: token || '' } }
+        { headers: { Authorization: `Bearer ${token}` } } // Ensure Bearer prefix
       )
       .subscribe(
         (chat: any) => {
           console.log('Chat created:', chat); // Debugging log
-          this.router.navigate(['/chat', chat._id]); // Navigate to the new chat
+          this.router.navigate(['/chat', chat._id, participantId]); // Navigate to the new chat with chatId and participantId
         },
         (error) => {
           console.error('Error creating chat:', error); // Debugging log

@@ -13,6 +13,7 @@ export class ChatComponent implements OnInit {
   messages: any[] = [];
   newMessage: string = '';
   chatId: string | null = null;
+  contactId: string | null = null;
   username: string | null = null; // Store the logged-in user's username
 
   constructor(
@@ -23,12 +24,34 @@ export class ChatComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const contactId = this.route.snapshot.paramMap.get('contactId');
-    const token = localStorage.getItem('token');
+    this.chatId = this.route.snapshot.paramMap.get('chatId');
+    this.contactId = this.route.snapshot.paramMap.get('contactId');
+    this.username = this.authService.getUsername(); 
 
+    console.log('Chat ID:', this.chatId); // Debugging log
+    console.log('Contact ID:', this.contactId); // Debugging log
+    console.log('username:', this.username); // Debugging log
+
+    if (!this.chatId) {
+      console.error('Chat ID is missing.');
+      return;
+    }
+
+    if (!this.contactId) {
+      console.error('Contact ID is missing.');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authorization token is missing.');
+      return;
+    }
+
+    // Fetch messages between the logged-in user and the contact
     this.http
-      .get(`http://localhost:3000/api/messages/${contactId}`, {
-        headers: { Authorization: token || '' },
+      .get(`http://localhost:3000/api/messages/${this.contactId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
       .subscribe({
         next: (messages: any) => {
@@ -39,74 +62,39 @@ export class ChatComponent implements OnInit {
         },
       });
 
-    this.chatId = this.route.snapshot.paramMap.get('chatId'); // Retrieve chatId from route
-    console.log('Chat ID:', this.chatId); // Debugging log
-
-    // Retrieve the logged-in user's username
-    this.username = this.authService.getUsername();
-    console.log('Logged-in username:', this.username); // Debugging log
-
-    if (!this.chatId) {
-      console.error('Chat ID is missing'); // Debugging log
-      return;
-    }
-
-    // Fetch messages for the chat
-    this.http
-      .get(`http://localhost:3000/api/chats/${this.chatId}`, {
-        headers: { Authorization: token || '' },
-      })
-      .subscribe({
-        next: (messages: any) => {
-          console.log('Fetched messages:', messages); // Debugging log
-          this.messages = messages; // Store messages in the component
-        },
-        error: (error) => {
-          console.error('Error fetching messages:', error); // Debugging log
-        },
-      });
-
     // Join the chat room
     this.socket.emit('join-chat', this.chatId);
 
     // Listen for new messages
     this.socket.on('receive-message', (message: any) => {
-      console.log('New message received:', message); // Debugging log
-      this.messages.push(message); // Add the new message to the chat window
+      console.log('New message received:', message);
+      this.messages.push(message);
     });
   }
 
   sendMessage(): void {
-    if (!this.newMessage.trim()) {
+    const token = localStorage.getItem('token'); // Ensure the token is retrieved correctly
+    if (!token) {
+      console.error('Authorization token is missing.');
       return;
     }
 
-    const token = localStorage.getItem('token');
-    if (!this.chatId || !token) {
-      console.error('Chat ID or token is missing'); // Debugging log
-      return;
-    }
-
-    const message = { text: this.newMessage };
+    const headers = { Authorization: `Bearer ${token}` };
 
     this.http
       .post(
         `http://localhost:3000/api/chats/${this.chatId}/messages`,
-        message,
-        { headers: { Authorization: token } }
+        { text: this.newMessage },
+        { headers }
       )
       .subscribe({
-        next: (sentMessage: any) => {
-          console.log('Message sent successfully:', sentMessage); // Debugging log
-          this.socket.emit('send-message', {
-            chatId: this.chatId,
-            message: sentMessage,
-          });
-          this.messages.push(sentMessage); // Add the message to the chat window
+        next: (response) => {
+          console.log('Message sent successfully:', response);
+          this.messages.push(response); // Add the message to the chat window
           this.newMessage = ''; // Clear the input field
         },
         error: (error) => {
-          console.error('Error sending message:', error); // Debugging log
+          console.error('Error sending message:', error);
         },
       });
   }

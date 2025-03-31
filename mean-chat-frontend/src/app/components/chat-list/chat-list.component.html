@@ -1,10 +1,12 @@
 <div class="chat-list-container">
   <h3>Your Chats</h3>
   <div class="chat-list">
-    <ul>
-      <li *ngFor="let chat of chats" (click)="openChat(chat._id.contact._id)">
-        <strong>{{ chat._id.contact.username }}</strong>
-        <p>{{ chat.lastMessage.text }}</p>
+    <ul *ngIf="chats.length > 0">
+      <li *ngFor="let chat of chats">
+        <button *ngIf="chat.participants[1]?.username" (click)="openChat(chat._id, chat.participants[1]._id)">
+          Open Chat with {{ chat.participants[1]?.username }}
+        </button>
+        <p *ngIf="!chat.participants[1]?.username">Participant data is missing</p>
       </li>
     </ul>
   </div>
